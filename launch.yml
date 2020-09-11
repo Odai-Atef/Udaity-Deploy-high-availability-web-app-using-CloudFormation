@@ -73,27 +73,27 @@ Resources:
      - CidrIp: 0.0.0.0/0
        IpProtocol: tcp
        ToPort: 80
-       FromPort: 0
+       FromPort: 80
        Description: Web Access
 
 
      - CidrIp: 0.0.0.0/0
        IpProtocol: tcp
        ToPort: 22
-       FromPort: 0
+       FromPort: 22
        Description: SSH access
 
 
     SecurityGroupIngress:
      - CidrIp: 0.0.0.0/0
        IpProtocol: tcp
-       FromPort: 0
+       FromPort: 80
        ToPort: 80
        Description: Web Access
 
      - CidrIp: 0.0.0.0/0
        IpProtocol: tcp
-       FromPort: 0
+       FromPort: 22
        ToPort: 22
        Description: SSH access
     Tags:
