@@ -1,0 +1,52 @@
+Parameters:
+ 
+ EnviromentName:
+  Type: String
+  Default: UdacityProjectII
+  Description: This is enviroment name
+ 
+ VPCCIDR:
+  Description: VPC IP range CIDR
+  Type: String
+  Default: 10.192.0.0/16
+ 
+ PrivateSubnetI:
+  Description: IP range CIDR for first private subnet
+  Type: String
+  Default: 10.192.20.0/24
+ 
+ PrivateSubnetII:
+  Decription: IP range CIDR for second private subnet
+  Type: String
+  Default: 10.192.21.0/24
+
+
+# whatever you consider a changing value, put it as a parameter instead of hard-coding it into your script
+Resources:
+  VPC:
+   Type: AWS::EC2::VPC
+   Properties:
+    CidrBlock: !Ref VPCCIDR
+    EnableDnsSupport: true
+    EnableDnsHostnames: true
+    Tags:
+     key: name
+     value: !Ref EnviromentName
+    
+  #instace profile contains the IAM Role name(s) that we want to associate to our auto scaling EC2 Servers
+  ProfileWithRolesForOurApp:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - UdacityS3ReadOnlyEC2
+  
+          #!/bin/bash
+          apt-get update -y
+          apt-get install unzip awscli -y
+          apt-get install apache2 -y
+          systemctl start apache2.service
+          cd /var/www/html
+          aws s3 cp s3://udacity-demo-1/udacity.zip .
+          unzip -o udacity.zip
+  Outputs: 
+  #Bonus points for useful outputs!
