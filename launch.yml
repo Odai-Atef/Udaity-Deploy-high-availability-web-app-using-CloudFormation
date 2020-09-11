@@ -10,13 +10,13 @@ Parameters:
   Type: String
   Default: 10.192.0.0/16
  
- PrivateSubnetI:
+ PrivateSubnetICIDR:
   Description: IP range CIDR for first private subnet
   Type: String
   Default: 10.192.20.0/24
  
- PrivateSubnetII:
-  Decription: IP range CIDR for second private subnet
+ PrivateSubnetIICIDR:
+  Description: IP range CIDR for second private subnet
   Type: String
   Default: 10.192.21.0/24
 
@@ -30,23 +30,32 @@ Resources:
     EnableDnsSupport: true
     EnableDnsHostnames: true
     Tags:
-     key: name
-     value: !Ref EnviromentName
-    
-  #instace profile contains the IAM Role name(s) that we want to associate to our auto scaling EC2 Servers
-  ProfileWithRolesForOurApp:
-    Type: AWS::IAM::InstanceProfile
-    Properties: 
-      Roles:
-        - UdacityS3ReadOnlyEC2
+     - Key: name
+       Value: !Ref EnviromentName
   
-          #!/bin/bash
-          apt-get update -y
-          apt-get install unzip awscli -y
-          apt-get install apache2 -y
-          systemctl start apache2.service
-          cd /var/www/html
-          aws s3 cp s3://udacity-demo-1/udacity.zip .
-          unzip -o udacity.zip
-  Outputs: 
-  #Bonus points for useful outputs!
+  PrivateSubnetI:
+   Type: AWS::EC2::Subnet
+   Properties:
+    VpcId: !Ref VPC
+    AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+    MapPublicIpOnLaunch: false
+    CidrBlock: !Ref PrivateSubnetICIDR
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+     - Key: Description
+       Value: PrivateSubnetI
+
+  PrivateSubnetII:
+   Type: AWS::EC2::Subnet
+   Properties:
+    VpcId: !Ref VPC
+    AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+    MapPublicIpOnLaunch: false
+    CidrBlock: !Ref PrivateSubnetIICIDR
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+     - Key: Description
+       Value: PrivateSubnetII
+
