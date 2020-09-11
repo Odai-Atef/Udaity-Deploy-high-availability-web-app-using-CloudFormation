@@ -5,6 +5,11 @@ Parameters:
   Default: UdacityProjectII
   Description: This is enviroment name
  
+ EC2ImageID:
+  Type: String
+  Default: ami-0545062d0daec9308
+  Description: Ec2 launch Image ID 
+
  VPCCIDR:
   Description: VPC IP range CIDR
   Type: String
@@ -58,4 +63,45 @@ Resources:
        Value: !Ref EnviromentName
      - Key: Description
        Value: PrivateSubnetII
+
+  EC2SecurityGroup:
+   Type: AWS::EC2::SecurityGroup
+   Properties:
+    VpcId: !Ref VPC
+    GroupDescription: Security Group for instances
+    SecurityGroupEgress: 
+     - CidrIp: 0.0.0.0/0
+       IpProtocol: tcp
+       ToPort: 80
+       FromPort: 0
+       Description: Web Access
+
+
+     - CidrIp: 0.0.0.0/0
+       IpProtocol: tcp
+       ToPort: 22
+       FromPort: 0
+       Description: SSH access
+
+
+    SecurityGroupIngress:
+     - CidrIp: 0.0.0.0/0
+       IpProtocol: tcp
+       FromPort: 0
+       ToPort: 80
+       Description: Web Access
+
+     - CidrIp: 0.0.0.0/0
+       IpProtocol: tcp
+       FromPort: 0
+       ToPort: 22
+       Description: SSH access
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+          
+
+
+
+
 
