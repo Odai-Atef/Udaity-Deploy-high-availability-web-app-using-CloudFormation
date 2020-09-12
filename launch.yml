@@ -4,10 +4,15 @@ Parameters:
   Type: String
   Default: UdacityProjectII
   Description: This is enviroment name
- 
+  
+ Ec2TypeID:
+  Type: String
+  Default: t2.micro
+  Description: Type of image
+
  EC2ImageID:
   Type: String
-  Default: ami-0545062d0daec9308
+  Default: ami-0ba60995c1589da9d
   Description: Ec2 launch Image ID 
 
  VPCCIDR:
@@ -99,8 +104,106 @@ Resources:
     Tags:
      - Key: name
        Value: !Ref EnviromentName
-          
 
+  Ec2InstanceI:
+   Type: AWS::EC2::Instance
+   Properties:
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+    ImageId: !Ref EC2ImageID
+    InstanceType: !Ref Ec2TypeID
+    KeyName: EC2
+    NetworkInterfaces: 
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet:
+         - Ref: EC2SecurityGroup
+        SubnetId:
+         Ref: PrivateSubnetI
+
+    BlockDeviceMappings: 
+      - DeviceName: "/dev/sdm"
+        Ebs: 
+         VolumeType: "io1"
+         Iops: "200"
+         DeleteOnTermination: "false"
+         VolumeSize: "20"  
+
+  Ec2InstanceII:
+   Type: AWS::EC2::Instance
+   Properties:
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+    ImageId: !Ref EC2ImageID
+    InstanceType: !Ref Ec2TypeID
+    KeyName: EC2
+    NetworkInterfaces: 
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet:
+         - Ref: EC2SecurityGroup
+        SubnetId:
+         Ref: PrivateSubnetI
+
+    BlockDeviceMappings: 
+      - DeviceName: "/dev/sdm"
+        Ebs: 
+         VolumeType: "io1"
+         Iops: "200"
+         DeleteOnTermination: "false"
+         VolumeSize: "20"      
+
+  Ec2InstanceIII:
+   Type: AWS::EC2::Instance
+   Properties:
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+    ImageId: !Ref EC2ImageID
+    InstanceType: !Ref Ec2TypeID
+    KeyName: EC2
+    NetworkInterfaces: 
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet:
+         - Ref: EC2SecurityGroup
+        SubnetId:
+         Ref: PrivateSubnetII
+
+    BlockDeviceMappings: 
+      - DeviceName: "/dev/sdm"
+        Ebs: 
+         VolumeType: "io1"
+         Iops: "200"
+         DeleteOnTermination: "false"
+         VolumeSize: "20"      
+
+  Ec2InstanceIV:
+   Type: AWS::EC2::Instance
+   Properties:
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+    ImageId: !Ref EC2ImageID
+    InstanceType: !Ref Ec2TypeID
+    KeyName: EC2
+    NetworkInterfaces: 
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet:
+         - Ref: EC2SecurityGroup
+        SubnetId:
+         Ref: PrivateSubnetII
+
+    BlockDeviceMappings: 
+      - DeviceName: "/dev/sdm"
+        Ebs: 
+         VolumeType: "io1"
+         Iops: "200"
+         DeleteOnTermination: "false"
+         VolumeSize: "20"      
 
 
 
