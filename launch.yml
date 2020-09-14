@@ -4,6 +4,11 @@ Parameters:
   Type: String
   Default: UdacityProjectII
   Description: This is enviroment name
+
+ S3Bucket:
+  Type: String
+  Default: udacity-demo-1
+  Description: Project Bucket Name
   
  Ec2TypeID:
   Type: String
@@ -33,21 +38,83 @@ Parameters:
 
 # whatever you consider a changing value, put it as a parameter instead of hard-coding it into your script
 Resources:
- ProfileWithRolesForOurApp:
-    Type: AWS::IAM::InstanceProfile
-    Properties: 
-      Roles:
-        - UdacityS3ReadOnlyEC2
-  
+  Ec2LaunchConfiguration:
+   Type: AWS::AutoScaling::LaunchConfiguration
+   Properties:
+    UserData: !Base64 |
           #!/bin/bash
           apt-get update -y
           apt-get install unzip awscli -y
           apt-get install apache2 -y
           systemctl start apache2.service
           cd /var/www/html
-          aws s3 cp s3://udacity-demo-1/udacity.zip .
-          unzip -o udacity.zip
-          
+      #    aws s3 cp s3://udacity-demo-1/udacity.zip .
+       #   unzip -o udacity.zip
+    
+    ImageId: !Ref EC2ImageID
+    InstanceType: !Ref Ec2TypeID
+    KeyName: EC2
+    IamInstanceProfile: !Ref EC2InstanceProfile
+    BlockDeviceMappings: 
+      - DeviceName: "/dev/sdm"
+        Ebs: 
+         VolumeType: "io1"
+         Iops: "200"
+         DeleteOnTermination: "false"
+         VolumeSize: "20"
+    SecurityGroups: 
+        - Ref: "EC2SecurityGroup"
+  
+  AutoScaleGroup:
+   Type: AWS::AutoScaling::AutoScalingGroup
+   Properties:
+    LaunchConfigurationName: !Ref Ec2LaunchConfiguration
+    MinSize: 4
+    MaxSize: 8
+    VPCZoneIdentifier: [!Ref PrivateSubnetI, !Ref PrivateSubnetII]
+
+  EC2S3RoleAccess:
+   Type: AWS::IAM::Role
+   Properties:
+    AssumeRolePolicyDocument:
+        Statement:
+         - Action: ['sts:AssumeRole']
+           Effect: Allow
+           Principal:
+            Service: [s3.amazonaws.com]
+    Tags:
+     - Key: name
+       Value: !Ref EnviromentName
+
+  S3BucketPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+        - Action: ['s3:GetReplicationConfiguration', 's3:ListBucket']
+          Effect: Allow
+          Resource:
+          - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket']]
+        - Action: ['s3:GetObjectVersion', 's3:GetObjectVersionAcl']
+          Effect: Allow
+          Resource:
+          - !Join ['', ['arn:aws:s3:::', !Ref 'S3Bucket', /*]]
+        - Action: ['s3:ReplicateObject', 's3:ReplicateDelete']
+          Effect: Allow
+          Resource:
+          - !Join ['', ['arn:aws:s3:::', !Join ['-', [!Ref 'AWS::Region', !Ref 'AWS::StackName',
+                  replicationbucket]], /*]]
+      PolicyName: S3BucketPolicy
+      Roles: [!Ref 'EC2S3RoleAccess']     
+
+  EC2InstanceProfile:
+   Type: AWS::IAM::InstanceProfile
+   Properties:
+    Roles:
+     - Ref: "EC2S3RoleAccess"
+
+
+
   VPC:
    Type: AWS::EC2::VPC
    Properties:
@@ -120,105 +187,111 @@ Resources:
      - Key: name
        Value: !Ref EnviromentName
 
-  Ec2InstanceI:
-   Type: AWS::EC2::Instance
-   Properties:
-    Tags:
-     - Key: name
-       Value: !Ref EnviromentName
-    ImageId: !Ref EC2ImageID
-    InstanceType: !Ref Ec2TypeID
-    KeyName: EC2
-    NetworkInterfaces: 
-      - AssociatePublicIpAddress: "true"
-        DeviceIndex: "0"
-        GroupSet:
-         - Ref: EC2SecurityGroup
-        SubnetId:
-         Ref: PrivateSubnetI
+Outputs:
+  ProcessDone:
+    Description: Enviroment Ready
+    Value: Enviroment Ready
+    
 
-    BlockDeviceMappings: 
-      - DeviceName: "/dev/sdm"
-        Ebs: 
-         VolumeType: "io1"
-         Iops: "200"
-         DeleteOnTermination: "false"
-         VolumeSize: "20"  
+  # Ec2InstanceI:
+  #  Type: AWS::EC2::Instance
+  #  Properties:
+  #   Tags:
+  #    - Key: name
+  #      Value: !Ref EnviromentName
+  #   ImageId: !Ref EC2ImageID
+  #   InstanceType: !Ref Ec2TypeID
+  #   KeyName: EC2
+  #   NetworkInterfaces: 
+  #     - AssociatePublicIpAddress: "true"
+  #       DeviceIndex: "0"
+  #       GroupSet:
+  #        - Ref: EC2SecurityGroup
+  #       SubnetId:
+  #        Ref: PrivateSubnetI
 
-  Ec2InstanceII:
-   Type: AWS::EC2::Instance
-   Properties:
-    Tags:
-     - Key: name
-       Value: !Ref EnviromentName
-    ImageId: !Ref EC2ImageID
-    InstanceType: !Ref Ec2TypeID
-    KeyName: EC2
-    NetworkInterfaces: 
-      - AssociatePublicIpAddress: "true"
-        DeviceIndex: "0"
-        GroupSet:
-         - Ref: EC2SecurityGroup
-        SubnetId:
-         Ref: PrivateSubnetI
+  #   BlockDeviceMappings: 
+  #     - DeviceName: "/dev/sdm"
+  #       Ebs: 
+  #        VolumeType: "io1"
+  #        Iops: "200"
+  #        DeleteOnTermination: "false"
+  #        VolumeSize: "20"  
 
-    BlockDeviceMappings: 
-      - DeviceName: "/dev/sdm"
-        Ebs: 
-         VolumeType: "io1"
-         Iops: "200"
-         DeleteOnTermination: "false"
-         VolumeSize: "20"      
+  # Ec2InstanceII:
+  #  Type: AWS::EC2::Instance
+  #  Properties:
+  #   Tags:
+  #    - Key: name
+  #      Value: !Ref EnviromentName
+  #   ImageId: !Ref EC2ImageID
+  #   InstanceType: !Ref Ec2TypeID
+  #   KeyName: EC2
+  #   NetworkInterfaces: 
+  #     - AssociatePublicIpAddress: "true"
+  #       DeviceIndex: "0"
+  #       GroupSet:
+  #        - Ref: EC2SecurityGroup
+  #       SubnetId:
+  #        Ref: PrivateSubnetI
 
-  Ec2InstanceIII:
-   Type: AWS::EC2::Instance
-   Properties:
-    Tags:
-     - Key: name
-       Value: !Ref EnviromentName
-    ImageId: !Ref EC2ImageID
-    InstanceType: !Ref Ec2TypeID
-    KeyName: EC2
-    NetworkInterfaces: 
-      - AssociatePublicIpAddress: "true"
-        DeviceIndex: "0"
-        GroupSet:
-         - Ref: EC2SecurityGroup
-        SubnetId:
-         Ref: PrivateSubnetII
+  #   BlockDeviceMappings: 
+  #     - DeviceName: "/dev/sdm"
+  #       Ebs: 
+  #        VolumeType: "io1"
+  #        Iops: "200"
+  #        DeleteOnTermination: "false"
+  #        VolumeSize: "20"      
 
-    BlockDeviceMappings: 
-      - DeviceName: "/dev/sdm"
-        Ebs: 
-         VolumeType: "io1"
-         Iops: "200"
-         DeleteOnTermination: "false"
-         VolumeSize: "20"      
+  # Ec2InstanceIII:
+  #  Type: AWS::EC2::Instance
+  #  Properties:
+  #   Tags:
+  #    - Key: name
+  #      Value: !Ref EnviromentName
+  #   ImageId: !Ref EC2ImageID
+  #   InstanceType: !Ref Ec2TypeID
+  #   KeyName: EC2
+  #   NetworkInterfaces: 
+  #     - AssociatePublicIpAddress: "true"
+  #       DeviceIndex: "0"
+  #       GroupSet:
+  #        - Ref: EC2SecurityGroup
+  #       SubnetId:
+  #        Ref: PrivateSubnetII
 
-  Ec2InstanceIV:
-   Type: AWS::EC2::Instance
-   Properties:
-    Tags:
-     - Key: name
-       Value: !Ref EnviromentName
-    ImageId: !Ref EC2ImageID
-    InstanceType: !Ref Ec2TypeID
-    KeyName: EC2
-    NetworkInterfaces: 
-      - AssociatePublicIpAddress: "true"
-        DeviceIndex: "0"
-        GroupSet:
-         - Ref: EC2SecurityGroup
-        SubnetId:
-         Ref: PrivateSubnetII
+  #   BlockDeviceMappings: 
+  #     - DeviceName: "/dev/sdm"
+  #       Ebs: 
+  #        VolumeType: "io1"
+  #        Iops: "200"
+  #        DeleteOnTermination: "false"
+  #        VolumeSize: "20"      
 
-    BlockDeviceMappings: 
-      - DeviceName: "/dev/sdm"
-        Ebs: 
-         VolumeType: "io1"
-         Iops: "200"
-         DeleteOnTermination: "false"
-         VolumeSize: "20"      
+  # Ec2InstanceIV:
+  #  Type: AWS::EC2::Instance
+  #  Properties:
+  #   Tags:
+  #    - Key: name
+  #      Value: !Ref EnviromentName
+  #   ImageId: !Ref EC2ImageID
+  #   InstanceType: !Ref Ec2TypeID
+  #   KeyName: EC2
+  #   NetworkInterfaces: 
+  #     - AssociatePublicIpAddress: "true"
+  #       DeviceIndex: "0"
+  #       GroupSet:
+  #        - Ref: EC2SecurityGroup
+  #       SubnetId:
+  #        Ref: PrivateSubnetII
+
+  #   BlockDeviceMappings: 
+  #     - DeviceName: "/dev/sdm"
+  #       Ebs: 
+  #        VolumeType: "io1"
+  #        Iops: "200"
+  #        DeleteOnTermination: "false"
+  #        VolumeSize: "20"      
 
 
 
